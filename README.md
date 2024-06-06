@@ -11,10 +11,10 @@ Fedora CoreOS template for proxmox with cloudinit support
 * **vmsetup.sh**
 
 ```
-TEMPLATE_VMID="1000"                     # Template Proxmox VMID 
-TEMPLATE_VMSTORAGE="thin-ssd"           # Proxmox storage  
-SNIPPET_STORAGE="local"                 # Snippets storage for hook and ignition file
-VMDISK_OPTIONS=",discard=on"            # Add options to vmdisk
+TEMPLATE_VMID="1000"             # Template Proxmox VMID 
+TEMPLATE_VMSTORAGE="thin-ssd"    # Proxmox storage  
+SNIPPET_STORAGE="local"          # Snippets storage for hook and ignition file
+VMDISK_OPTIONS=",discard=on"     # Add options to vmdisk
 ```
 
 * **fcos-base-tmplt.yaml**
