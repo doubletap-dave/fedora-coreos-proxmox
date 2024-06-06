@@ -6,8 +6,8 @@ vmid="$1"
 phase="$2"
 
 # global vars
-COREOS_TMPLT=/opt/fcos-tmplt.yaml
-COREOS_FILES_PATH=/etc/pve/geco-pve/coreos
+COREOS_TMPLT=/opt/fcos-template.yaml
+COREOS_FILES_PATH=/etc/pve/coreos
 YQ="/usr/local/bin/yq read --exitStatus --printMode v --stripComments --"
 
 # ==================================================================================================================================================================
@@ -34,7 +34,7 @@ setup_yq()
 
         [[ -x /usr/bin/wget ]]&& download_command="wget --quiet --show-progress --output-document"  || download_command="curl --location --output"
         [[ -x /usr/local/bin/yq ]]&& [[ "x$(/usr/local/bin/yq --version | awk '{print $NF}')" == "x${VER}" ]]&& return 0
-        echo "Setup yaml parser tools yq..."
+        echo "Setup YAML parser tools yq..."
         rm -f /usr/local/bin/yq
         ${download_command} /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/${VER}/yq_linux_amd64
         chmod 755 /usr/local/bin/yq
@@ -61,17 +61,17 @@ then
 	[[ "x${cipasswd}" != "x" ]]&& VALIDCONFIG=true
 	${VALIDCONFIG:-false} || [[ "x$(qm cloudinit dump ${vmid} user | ${YQ} - 'ssh_authorized_keys[*]')" == "x" ]]|| VALIDCONFIG=true
 	${VALIDCONFIG:-false} || {
-		echo "Fedora CoreOS: you must set passwd or ssh-key before start VM${vmid}"
+		echo "Fedora CoreOS: you must set passwd or ssh-key before starting VM ${vmid}"
 		exit 1
 	}
 
-	echo -n "Fedora CoreOS: Generate yaml users block... "
-	echo -e "# This file is managed by Geco-iT hook-script. Do not edit.\n" > ${COREOS_FILES_PATH}/${vmid}.yaml
+	echo -n "Fedora CoreOS: Generate YAML users block... "
+	echo -e "# This file is managed by the d8y hook-script. Please do not edit.\n" > ${COREOS_FILES_PATH}/${vmid}.yaml
 	echo -e "variant: fcos\nversion: 1.1.0" >> ${COREOS_FILES_PATH}/${vmid}.yaml
 	echo -e "# user\npasswd:\n  users:" >> ${COREOS_FILES_PATH}/${vmid}.yaml
 	ciuser="$(qm cloudinit dump ${vmid} user 2> /dev/null | grep ^user: | awk '{print $NF}')"
 	echo "    - name: \"${ciuser:-admin}\"" >> ${COREOS_FILES_PATH}/${vmid}.yaml
-	echo "      gecos: \"Geco-iT CoreOS Administrator\"" >> ${COREOS_FILES_PATH}/${vmid}.yaml
+	echo "      gecos: \"d8y CoreOS Administrator\"" >> ${COREOS_FILES_PATH}/${vmid}.yaml
 	echo "      password_hash: '${cipasswd}'" >> ${COREOS_FILES_PATH}/${vmid}.yaml
 	echo '      groups: [ "sudo", "docker", "adm", "wheel", "systemd-journal" ]' >> ${COREOS_FILES_PATH}/${vmid}.yaml
 	echo '      ssh_authorized_keys:' >> ${COREOS_FILES_PATH}/${vmid}.yaml
@@ -79,7 +79,7 @@ then
 	echo >> ${COREOS_FILES_PATH}/${vmid}.yaml
 	echo "[done]"
 
-	echo -n "Fedora CoreOS: Generate yaml hostname block... "
+	echo -n "Fedora CoreOS: Generate YAML hostname block... "
 	hostname="$(qm cloudinit dump ${vmid} user | ${YQ} - 'hostname' 2> /dev/null)"
 	echo -e "# network\nstorage:\n  files:" >> ${COREOS_FILES_PATH}/${vmid}.yaml
 	echo "    - path: /etc/hostname" >> ${COREOS_FILES_PATH}/${vmid}.yaml
@@ -90,7 +90,7 @@ then
 	echo -e "          ${hostname,,}\n" >> ${COREOS_FILES_PATH}/${vmid}.yaml 
 	echo "[done]"
 	
-	echo -n "Fedora CoreOS: Generate yaml network block... "
+	echo -n "Fedora CoreOS: Generate YAML network block... "
 	netcards="$(qm cloudinit dump ${vmid} network | ${YQ} - 'config[*].name' 2> /dev/null | wc -l)"
 	nameservers="$(qm cloudinit dump ${vmid} network | ${YQ} - "config[${netcards}].address[*]" | paste -s -d ";" -)"
 	searchdomain="$(qm cloudinit dump ${vmid} network | ${YQ} - "config[${netcards}].search[*]" | paste -s -d ";" -)"
@@ -153,7 +153,7 @@ then
 		touch /var/lock/qemu-server/lock-${vmid}.conf
 
 		# hack for reload new ignition file
-		echo -e "\nWARNING: New generated Fedora CoreOS ignition settings, we must restart vm..."
+		echo -e "\nWARNING: New generated Fedora CoreOS ignition settings, restarting to apply..."
 		qm stop ${vmid} && sleep 2 && qm start ${vmid}&
 		exit 1
 	}
