@@ -1,3 +1,5 @@
+Original repo: https://git.geco-it.net/GECO-IT-PUBLIC/fedora-coreos-proxmox
+
 # fedora-coreos-proxmox
 
 Fedora CoreOS template for proxmox with cloudinit support
