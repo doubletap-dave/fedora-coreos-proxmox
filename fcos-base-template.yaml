@@ -4,15 +4,16 @@
       contents:
         inline: |
           #!/bin/bash
-          
+
           OUT=/etc/console-login-helper-messages/motd.d/22_geco.motd
-          
-          echo -e "\nWelcome on a server powered by\n" > ${OUT}
-          echo -e '\e[33m    ______                      _ ______' >> ${OUT}
-          echo -e '\e[33m   / ____/__  _________        (_)_  __/' >> ${OUT}
-          echo -e '\e[33m  / / __/ _ \/ ___/ __ \  __   / / / /' >> ${OUT}
-          echo -e '\e[33m / /_/ /  __/ /__/ /_/ / |__| / / / /' >> ${OUT}
-          echo -e '\e[33m \____/\___/\___/\____/      /_/ /_/\n\n' >> ${OUT}
+
+          echo -e "\n *** What's up, fucker! ***\n" > ${OUT}
+          echo -e '\e[33m     ._________        ' >> ${OUT}
+          echo -e '\e[33m   __| _/  __  \___.__.' >> ${OUT}
+          echo -e '\e[33m  / __ |>      <   |  |' >> ${OUT}
+          echo -e '\e[33m / /_/ /   --   \___  |' >> ${OUT}
+          echo -e '\e[33m \____ \______  / ____|' >> ${OUT}
+          echo -e '\e[33m      \/      \/\/     ' >> ${OUT}
           eval "$(grep -E "^(NAME=|VARIANT=)" /etc/os-release)" && echo -e "\e[33mOperating System:\e[0m ${NAME} ${VARIANT}" >> ${OUT}
           eval "$(grep ^OSTREE_VERSION /etc/os-release)" && echo -e "\e[33mVersion:\e[0m ${OSTREE_VERSION}" >> ${OUT}
           echo -e "\e[33mKernel:\e[0m $(uname -r)" >> ${OUT}
@@ -127,7 +128,7 @@
           # ===================================================================================
           # main()
           [[ ! -e /dev/sr0 ]]&& {
-            echo "[INFO]: Cloudinit: any drive found..."
+            echo "[INFO]: Cloudinit: drive found..."
             exit 0
           }
           mkdir -p ${CIPATH}
@@ -135,7 +136,7 @@
           MOUNTED=true
 
           [[ ! -e ${CIPATH}/meta-data ]]&& {
-            echo "[ERROR]: Cloudinit: nocloud metada not found..."
+            echo "[ERROR]: Cloudinit: no cloud metadata not found..."
             exit 1
           }
 
@@ -143,7 +144,7 @@
           if [[ -e /var/.cloudinit ]]
           then
             [[ "x$(cat /var/.cloudinit)" == "x${cloudinit_instanceid}" ]]&& {
-            echo "[INFO]: Cloudinit any change detected..."
+            echo "[INFO]: Cloudinit: change detected..."
             exit 0
             }
 
@@ -160,7 +161,7 @@
             [[ "x${NEWUSERNAME}" == "x" ]] && NEWUSERNAME="admin" # NEWUSERNAME="core" use "admin" on geco-template
             getent passwd ${NEWUSERNAME} &> /dev/null || {
               echo -n "[INFO]: Cloudinit: add sytem user: ${NEWUSERNAME}... "
-              useradd --comment "Geco-iT CoreOS Administrator" --create-home \
+              useradd --comment "CoreOS Administrator" --create-home \
                       --groups adm,wheel,sudo,systemd-journal,docker ${NEWUSERNAME} &> /dev/null || { echo "[failed]"; exit 1; }
               echo "[done]"
             }
@@ -182,7 +183,7 @@
               install --owner=${NEWUSERNAME} --group=${NEWUSERNAME} \
                       --mode=0600 /dev/null /var/home/${NEWUSERNAME}/.ssh/authorized_keys.d/ignition &> /dev/null || { echo "[failed]"; exit 1; }
             }
-            echo -n "[INFO]: Cloudinit: wrote ssh authorized keys file for user: ${NEWUSERNAME}... "
+            echo -n "[INFO]: Cloudinit: copied ssh authorized keys file for user: ${NEWUSERNAME}... "
             ${YQ} ${CIPATH}/user-data 'ssh_authorized_keys[*]' > /var/home/${NEWUSERNAME}/.ssh/authorized_keys.d/ignition 2> /dev/null || { echo "[failed]"; exit 1; }
             echo "[done]"
             # Network => ipv6: TODO
@@ -242,7 +243,7 @@
           fi
 
           ${MUST_NET_RECONFIG:-false}&& {
-            echo "[INFO]: Cloudinit: must reload network..."
+            echo "[INFO]: Cloudinit: reloading network..."
             nmcli connection reload
             nmcli networking off
             nmcli networking on
@@ -254,26 +255,25 @@
           echo "${cloudinit_instanceid}" > /var/.cloudinit
           echo "[done]"
           ${MUST_REBOOT:-false}&& {
-            echo "[INFO]: Cloudinit: applied settings; must reboot..."
+            echo "[INFO]: Cloudinit: applied settings, rebooting"
             /bin/systemctl --no-block reboot
           }
 
           exit 0 
 
-# geco-issue
-    - path: /etc/console-login-helper-messages/issue.d/00_geco.issue
+    - path: /etc/console-login-helper-messages/issue.d/00_powered_by.issue
       mode: 0644
       contents:
         inline: |
 
-          Welcome on a server powered by
+          Welcome on a server powered by...
+                               __      
+           ___ ___ _____ _____/ /__ ___
+          / _ `/ // / _ `/ __/  '_/(_-<
+          \_, /\_,_/\_,_/_/ /_/\_\/___/
+          /_/                         
 
-            ,----.                                   ,--. ,--------.
-           '  .-./     ,---.   ,---.  ,---.  ,-----. `--' '--.  .--'
-           |  | .---. | .-. : | .--' | .-. | '-----' ,--.    |  |
-           '  '--'  | \\   --. \\ `--. ' '-' '         |  |    |  |
-            `------'   `----'  `---'  `---'          `--'    `--'
-            
+          and your mom...
           .
 
 # kernel config
@@ -286,38 +286,37 @@
           kernel.printk=4
 
 
-# geco-motd.service
 systemd:
   units:
-    - name: geco-motd.service
+    - name: motd.service
       enabled: true
       contents: |
         [Unit]
-        Description=Geco-iT Motd
+        Description=MOTD
         Before=console-login-helper-messages-motdgen.service
         After=network-online.target
 
         [Service]
         Type=oneshot
-        ExecStart=/usr/local/bin/geco-motd
+        ExecStart=/usr/local/bin/motd
         RemainAfterExit=yes
 
         [Install]
         WantedBy=multi-user.target
 
-# geco-cloudinit: apply cloudinit settings on boot
-    - name: geco-cloudinit.service
+# cloudinit: apply cloudinit settings on boot
+    - name: cloudinit.service
       enabled: true
       contents: |
         [Unit]
-        Description=Geco-iT Cloudinit
+        Description=Cloudinit
         Wants=network-online.target
         After=network.target network-online.target
  
         [Service]
         Type=oneshot
         TimeoutStartSec=0
-        ExecStart=/usr/local/bin/geco-cloudinit
+        ExecStart=/usr/local/bin/cloudinit
         RemainAfterExit=yes
  
         [Install]
@@ -328,7 +327,7 @@ systemd:
       enabled: true
       contents: |
         [Unit]
-        Description=Geco-iT Setup Qemu Guest Agent
+        Description=Setup Qemu Guest Agent
         After=network-online.target
         Require=network-online.target
         ConditionKernelCommandLine=ignition.platform.id=qemu
